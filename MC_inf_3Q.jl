@@ -172,13 +172,13 @@ end
 
 function initialize()
     J = 1.0
-    K = 0.0
+    K = 0.7
     D = 0.3
     h = zeros(3)  #*ones(3)/sqrt(3) #
     # magnetic field array
     hsteps = 10
     h_array = range(0.0, stop=3.0, length=hsteps)#range(0.01, stop=3.0, length=hsteps)
-    N = 8
+    N = 16
     T = 0.0001 #Temperature for Monte Carlo
 
     

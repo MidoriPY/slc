@@ -165,7 +165,7 @@ module slc_functions
         for i in 1:size(ParamHam.q_list)[1]
             E += (sq_list[i]'sq_list[i])^2
         end
-        return ParamHam.K*E #/ParamSys.N^3
+        return ParamHam.K*E /ParamSys.N^3
     end
 
     function get_DM_3Q(sq_list, ParamHam, ParamSys) 
