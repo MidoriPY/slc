@@ -14,8 +14,8 @@ module slc_functions
 
     #Fourier transform of S (real space spin configuration) at q vector q
     function S_q( q, S, N) #k vector where want to be evaluated, S= spinsystem NxN in 3 dim Sx,Sy,Sz
-        S_k =zeros(ComplexF64,3)
-        for i in 1:N
+        S_k = ComplexF64[0.0,0.0,0.0] #zeros(ComplexF64,3)
+        @inbounds for i in 1:N
             for j in 1:N
                 for l in 1:N
                     r = [i,j,l]
@@ -23,7 +23,6 @@ module slc_functions
                 end
             end
         end
-    
         return (S_k)/sqrt(N^3)
     end
     #*******************************************
