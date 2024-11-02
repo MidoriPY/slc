@@ -4,6 +4,7 @@ using Statistics
 using LinearAlgebra
 using IJulia
 using Serialization
+using Threads
 
 # include("../modules/h_structurefactor.jl")
 include("slc_functions.jl")
@@ -172,39 +173,16 @@ end
 
 function initialize()
     J = 1.0
-    K = 0.0
+    K = 0.7
     D = 0.3
     h = zeros(3)  #*ones(3)/sqrt(3) #
     # magnetic field array
     hsteps = 10
     h_array = range(0.0, stop=3.0, length=hsteps)#range(0.01, stop=3.0, length=hsteps)
-    N = 8
+    N = 16
     T = 0.0001 #Temperature for Monte Carlo
 
-    
-
-    config =  rand(N,N,N,3)# # #helicalstate_test(N,Q) threeQ_HL(N, 0.0) 
-    for i in 1:N
-        for j in 1:N
-            for l in 1:N
-                config[i,j,l,:] = config[i,j,l,:]/norm(config[i,j,l,:])
-            end
-        end
-    end
-    beta = 1/T
-    Q = pi/4
-    q_list = Matrix{Float64}(I, 3, 3)*Q
-    Sq_list = zeros(ComplexF64, 3, 3)
-
-
-    Random.seed!(234)
-
-    for i in 1:3
-
-        Sq_list[i,:] = slc_functions.S_q( q_list[i,:], config, N)
-    end
-
-    mcstep = 10^3#3 #* Monte Carlo steps
+    mcstep = 10^4#3 #* Monte Carlo steps
     eqsteps = 1#3 #* thermalisation steps
     stepsperann = 10^4#0^2  #* steps per annealing temperature step 
     annsteps =20    #* annealing steps
@@ -233,45 +211,70 @@ function initialize()
     #set all parameters
     ParamSys = paramsys(N,T, mcstep, eqsteps, stepsperann, annsteps, mn, sn, lm, tnum) #, A, m, shift
     ParamHam = paramham(Q,J,K,D,h, q_list)
-            
-    # #MAIN FUNCTION
-    println(" field is now : ", 0)
-    newconfig,E,E_sq,sf, magn, magn_sq, mq_list = calcul(ParamHam, ParamSys, config, Sq_list, T_ann)
-    # append!(results, [newconfig,E,E_sq,sf, magn, magn_sq])
-    open("data/inf_3Q_test_strongK_[001]_h_$(0.0).jls", "w") do file
-        serialize(file,[newconfig,E,E_sq,sf, magn, magn_sq,mq_list, 0.0])
-    end
-    # #* for field scans
-    #annealing at each h step
 
-    Tinit_ann = 0.01
-    Tend_ann = 0.0001
-    Tarray = LinRange(Tinit_ann,Tend_ann,annsteps)
-    T_ann = zeros(annsteps)
+    @threads for i in 1:10
+        Random.seed!(50*i)
+        config =  rand(N,N,N,3)# # #helicalstate_test(N,Q) threeQ_HL(N, 0.0) 
+        for i in 1:N
+            for j in 1:N
+                for l in 1:N
+                    config[i,j,l,:] = config[i,j,l,:]/norm(config[i,j,l,:])
+                end
+            end
+        end
+        beta = 1/T
+        Q = pi/4
+        q_list = Matrix{Float64}(I, 3, 3)*Q
+        Sq_list = zeros(ComplexF64, 3, 3)
 
-    alpha= exp(log(Tend_ann/Tinit_ann)/annsteps)::Float64
 
-    T_ann[end] = Tinit_ann::Float64
-    #Tarray_ann = LinRange(Tinit_ann,Tend_ann,annsteps)
-    for i in 1:annsteps-1
-        T_ann[end-i] = T_ann[end-i+1]*alpha
-    end
-    T_ann = reverse(T_ann)
+        Random.seed!(234)
 
-    #* uncomment for field scan
-    # for i in 2:hsteps
-    #     println(" field is now : ", h_array[i])
-    #     hnew = [0.0,0.0,h_array[i]]
-    #     ParamHam = paramham(Q,J,K,D,hnew, q_list)
-    #     # ParamSys = paramsys(N,T, mcstep, eqsteps, stepsperann, annsteps, mn, sn, lm, tnum) #, A, m, shift
-    #     newconfig,E,E_sq,sf, magn, magn_sq, mq_list = calcul(ParamHam, ParamSys, config, Sq_list, T_ann)
-    #     # append!(results, [newconfig,E,E_sq,sf, magn, magn_sq,mq_list, h_array[i]])
-    #     open("data/inf_3Q_test_seed2_[001]_h_$(round(h_array[i],digits= 2)).jls", "w") do file
-    #         serialize(file,[newconfig,E,E_sq,sf, magn, magn_sq,mq_list, h_array[i]])
-    #     end
+        for i in 1:3
+
+            Sq_list[i,:] = slc_functions.S_q( q_list[i,:], config, N)
+        end
+
         
-    # end
+                
+        # #MAIN FUNCTION
+        println(" field is now : ", 0)
+        newconfig,E,E_sq,sf, magn, magn_sq, mq_list = calcul(ParamHam, ParamSys, config, Sq_list, T_ann)
+        # append!(results, [newconfig,E,E_sq,sf, magn, magn_sq])
+        open("data/inf_3Q_sd_$(i)_[001]_h_$(0.0).jls", "w") do file
+            serialize(file,[newconfig,E,E_sq,sf, magn, magn_sq,mq_list, 0.0])
+        end
+        # #* for field scans
+        #annealing at each h step
 
+        Tinit_ann = 0.01
+        Tend_ann = 0.0001
+        Tarray = LinRange(Tinit_ann,Tend_ann,annsteps)
+        T_ann = zeros(annsteps)
+
+        alpha= exp(log(Tend_ann/Tinit_ann)/annsteps)::Float64
+
+        T_ann[end] = Tinit_ann::Float64
+        #Tarray_ann = LinRange(Tinit_ann,Tend_ann,annsteps)
+        for i in 1:annsteps-1
+            T_ann[end-i] = T_ann[end-i+1]*alpha
+        end
+        T_ann = reverse(T_ann)
+
+        #* uncomment for field scan
+        # for i in 2:hsteps
+        #     println(" field is now : ", h_array[i])
+        #     hnew = [0.0,0.0,h_array[i]]
+        #     ParamHam = paramham(Q,J,K,D,hnew, q_list)
+        #     # ParamSys = paramsys(N,T, mcstep, eqsteps, stepsperann, annsteps, mn, sn, lm, tnum) #, A, m, shift
+        #     newconfig,E,E_sq,sf, magn, magn_sq, mq_list = calcul(ParamHam, ParamSys, config, Sq_list, T_ann)
+        #     # append!(results, [newconfig,E,E_sq,sf, magn, magn_sq,mq_list, h_array[i]])
+        #     open("data/inf_3Q_test_seed2_[001]_h_$(round(h_array[i],digits= 2)).jls", "w") do file
+        #         serialize(file,[newconfig,E,E_sq,sf, magn, magn_sq,mq_list, h_array[i]])
+        #     end
+            
+        # end
+    end
    
 
 end

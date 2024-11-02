@@ -150,7 +150,7 @@ module slc_functions
 
     #****  Hamiltonian functions  ****
 
-    function get_JHami(sq_list, ParamHam, ParamSys) 
+    function get_JHami(sq_list, ParamHam) 
         E=0.0
         for i in 1:size(ParamHam.q_list)[1]
 
@@ -160,7 +160,7 @@ module slc_functions
         return  ParamHam.J*E
     end
 
-    function get_biquadratic(sq_list, ParamHam, ParamSys) 
+    function get_biquadratic(sq_list, ParamHam) 
         E=0.0
         for i in 1:size(ParamHam.q_list)[1]
             E += (sq_list[i]'sq_list[i])^2
@@ -168,7 +168,7 @@ module slc_functions
         return ParamHam.K*E #/ParamSys.N^3
     end
 
-    function get_DM_3Q(sq_list, ParamHam, ParamSys) 
+    function get_DM_3Q(sq_list, ParamHam) 
     
         E = (sq_list[1,2].*conj(sq_list[1,3]) - sq_list[1,3].*conj(sq_list[1,2]))
         E += (sq_list[2,3].*conj(sq_list[2,1]) - sq_list[2,1].*conj(sq_list[2,3]))
@@ -198,7 +198,6 @@ module slc_functions
                 end
             end
         end
-
         return E
     end
     #*******************************************
@@ -219,15 +218,13 @@ module slc_functions
                     newconfig = copy(config)
                     newconfig[a,b,c,:] = copy(new_s)
                 
-                    del_E, newE, newSq_list = getEdiff(config, newconfig, old_s, new_s,a,b,c, Sq_list, ParamHam, ParamSys, E) 
+                    del_E, newE, newSq_list = getEdiff( newconfig, old_s, new_s,a,b,c, Sq_list, ParamHam, ParamSys, E) 
             
                     if rand() < min(1, exp(-real(del_E)*beta))
                         # println("------ accepted  ------")
                         config[a,b,c,:] = copy(new_s) 
                         Sq_list = copy(newSq_list)
                         E = copy(newE)
-        
-        
                     end
                 end 
             end
@@ -236,7 +233,7 @@ module slc_functions
     end
 
     # compare energies, evaluate energy difference
-    function getEdiff(config, newconfig, old_s, new_s,a,c,b, sq_list, ParamHam, ParamSys, E ) #, newconfig
+    function getEdiff(newconfig, old_s, new_s,a,c,b, sq_list, ParamHam, ParamSys, E ) #, newconfig
         r = [a,b,c]
 
         # oldE = wholeHami(config, sq_list, ParamHam, ParamSys )#wholehamiltonian(config, a, b,c) in k space is fine
@@ -244,18 +241,16 @@ module slc_functions
         new_Sq_list = zeros(ComplexF64, length(ParamHam.q_list),3)
 
         for i in 1:size(ParamHam.q_list)[1]
-            q = ParamHam.q_list[i,:]
-            new_Sq_list[i,:] = copy(sq_list[i,:]) .+ (new_s .- old_s ).*exp(-im*q'r) /sqrt(ParamSys.N^3)
+            new_Sq_list[i,:] = copy(sq_list[i,:]) .+ (new_s .- old_s ).*exp(-im*ParamHam.q_list[i,:]'r) /sqrt(ParamSys.N^3)
         end
-        # config[a,b,c,:] = copy(new_s)
-        # @assert isapprox(config, newconfig,atol=1e-10)
+    
         newE = wholeHami(newconfig, new_Sq_list, ParamHam, ParamSys)
         return newE - E, newE, new_Sq_list  # newE  energy of new config - energy of old config
     end
 
 
     function wholeHami(conf,sq_list, ParamHam, ParamSys)
-        return  - get_h(conf, ParamHam, ParamSys)  - get_JHami(sq_list, ParamHam, ParamSys) + get_biquadratic(sq_list, ParamHam, ParamSys) - get_DM_3Q(sq_list, ParamHam, ParamSys)
+        return  - get_h(conf, ParamHam, ParamSys)  - get_JHami(sq_list, ParamHam) + get_biquadratic(sq_list, ParamHam) - get_DM_3Q(sq_list, ParamHam)
     end
 
 
