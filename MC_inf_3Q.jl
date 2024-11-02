@@ -228,8 +228,6 @@ function initialize()
         Sq_list = zeros(ComplexF64, 3, 3)
 
 
-        Random.seed!(234)
-
         for i in 1:3
 
             Sq_list[i,:] = slc_functions.S_q( q_list[i,:], config, N)
