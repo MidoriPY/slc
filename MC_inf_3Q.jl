@@ -4,7 +4,7 @@ using Statistics
 using LinearAlgebra
 using IJulia
 using Serialization
-using Threads
+using Base.Threads
 
 # include("../modules/h_structurefactor.jl")
 include("slc_functions.jl")
@@ -182,9 +182,9 @@ function initialize()
     N = 16
     T = 0.0001 #Temperature for Monte Carlo
 
-    mcstep = 10^4#3 #* Monte Carlo steps
+    mcstep = 10^4 #4 #* Monte Carlo steps
     eqsteps = 1#3 #* thermalisation steps
-    stepsperann = 10^4#0^2  #* steps per annealing temperature step 
+    stepsperann = 10^3#0^2  #* steps per annealing temperature step 
     annsteps =20    #* annealing steps
     mn = 10          #* 100 mean number
     sn = 10     #* ^2 #number of snapshots(measurements)
@@ -210,7 +210,7 @@ function initialize()
 
     #set all parameters
     ParamSys = paramsys(N,T, mcstep, eqsteps, stepsperann, annsteps, mn, sn, lm, tnum) #, A, m, shift
-    ParamHam = paramham(Q,J,K,D,h, q_list)
+
 
     @threads for i in 1:10
         Random.seed!(50*i)
@@ -222,12 +222,12 @@ function initialize()
                 end
             end
         end
-        beta = 1/T
+       
         Q = pi/4
         q_list = Matrix{Float64}(I, 3, 3)*Q
         Sq_list = zeros(ComplexF64, 3, 3)
 
-
+        ParamHam = paramham(Q,J,K,D,h, q_list)
         for i in 1:3
 
             Sq_list[i,:] = slc_functions.S_q( q_list[i,:], config, N)
@@ -245,19 +245,19 @@ function initialize()
         # #* for field scans
         #annealing at each h step
 
-        Tinit_ann = 0.01
-        Tend_ann = 0.0001
-        Tarray = LinRange(Tinit_ann,Tend_ann,annsteps)
-        T_ann = zeros(annsteps)
+        # Tinit_ann = 0.01
+        # Tend_ann = 0.0001
+        # Tarray = LinRange(Tinit_ann,Tend_ann,annsteps)
+        # T_ann = zeros(annsteps)
 
-        alpha= exp(log(Tend_ann/Tinit_ann)/annsteps)::Float64
+        # alpha= exp(log(Tend_ann/Tinit_ann)/annsteps)::Float64
 
-        T_ann[end] = Tinit_ann::Float64
-        #Tarray_ann = LinRange(Tinit_ann,Tend_ann,annsteps)
-        for i in 1:annsteps-1
-            T_ann[end-i] = T_ann[end-i+1]*alpha
-        end
-        T_ann = reverse(T_ann)
+        # T_ann[end] = Tinit_ann::Float64
+        # #Tarray_ann = LinRange(Tinit_ann,Tend_ann,annsteps)
+        # for i in 1:annsteps-1
+        #     T_ann[end-i] = T_ann[end-i+1]*alpha
+        # end
+        # T_ann = reverse(T_ann)
 
         #* uncomment for field scan
         # for i in 2:hsteps

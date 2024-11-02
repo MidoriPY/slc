@@ -14,8 +14,8 @@ module slc_functions
 
     #Fourier transform of S (real space spin configuration) at q vector q
     function S_q( q, S, N) #k vector where want to be evaluated, S= spinsystem NxN in 3 dim Sx,Sy,Sz
-        S_k = ComplexF64[0.0,0.0,0.0] #zeros(ComplexF64,3)
-        @inbounds for i in 1:N
+        S_k =zeros(ComplexF64,3)
+        for i in 1:N
             for j in 1:N
                 for l in 1:N
                     r = [i,j,l]
@@ -23,6 +23,7 @@ module slc_functions
                 end
             end
         end
+    
         return (S_k)/sqrt(N^3)
     end
     #*******************************************
@@ -159,7 +160,7 @@ module slc_functions
         return  ParamHam.J*E
     end
 
-    function get_biquadratic(sq_list, ParamHam) 
+    function get_biquadratic(sq_list, ParamHam, ParamSys) 
         E=0.0
         for i in 1:size(ParamHam.q_list)[1]
             E += (sq_list[i]'sq_list[i])^2
@@ -249,7 +250,7 @@ module slc_functions
 
 
     function wholeHami(conf,sq_list, ParamHam, ParamSys)
-        return  - get_h(conf, ParamHam, ParamSys)  - get_JHami(sq_list, ParamHam) + get_biquadratic(sq_list, ParamHam) - get_DM_3Q(sq_list, ParamHam)
+        return  - get_h(conf, ParamHam, ParamSys)  - get_JHami(sq_list, ParamHam) + get_biquadratic(sq_list, ParamHam, ParamSys) - get_DM_3Q(sq_list, ParamHam)
     end
 
 
