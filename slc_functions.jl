@@ -198,7 +198,7 @@ module slc_functions
                 end
             end
         end
-        return E
+        return E/(3*ParamSys.N^3)
     end
     #*******************************************
 
