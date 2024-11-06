@@ -233,9 +233,9 @@ function initialize()
         if (norm(Sq_list[i,:])> 1e-10)
             Sq_list[i,:] /= norm(Sq_list[i,:])
         end
-    end
+    end    
                 
-        # #MAIN FUNCTION
+        # #MAIN FUNCTIONcvx
         # println(" field is now : ", 0)
         # newconfig,E,E_sq,sf, magn, magn_sq, mq_list = calcul(ParamHam, ParamSys, config, Sq_list, T_ann)
         # # append!(results, [newconfig,E,E_sq,sf, magn, magn_sq])
